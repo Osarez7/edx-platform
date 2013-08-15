@@ -3,6 +3,8 @@ from pytz import UTC
 
 from xblock.fields import Scope, Boolean, String, Float
 from xmodule.fields import Date, Timedelta
+from xmodule.x_module import XModuleDescriptor
+from xblock.runtime import KeyValueStore
 
 # A list of metadata that this module can inherit from its parent module
 INHERITABLE_METADATA = (
@@ -64,16 +66,17 @@ def compute_inherited_metadata(descriptor):
 
     NOTE: This means that there is no such thing as lazy loading at the
     moment--this accesses all the children."""
-    for child in descriptor.get_children():
-        inherit_metadata(
-            child,
-            {
-                attr: descriptor._field_data.get(descriptor, attr)
-                for attr in INHERITABLE_METADATA
-                if descriptor._field_data.has(descriptor, attr)
-            }
-        )
-        compute_inherited_metadata(child)
+    if descriptor.has_children:
+        parent_metadata = descriptor.xblock_kvs.inherited_settings.copy()
+        # add any of descriptor's explicitly set fields to the inheriting list
+        for field in INHERITABLE_METADATA:
+            # pylint: disable = W0212
+            if descriptor._field_data.has(field):
+                parent_metadata[field] = descriptor._field_data.has(descriptor, field)
+
+        for child in descriptor.get_children():
+            inherit_metadata(child, parent_metadata)
+            compute_inherited_metadata(child)
 
 
 def inherit_metadata(descriptor, inherited_data):
@@ -104,29 +107,48 @@ def inherit_metadata(descriptor, inherited_data):
 
 
 def own_metadata(module):
-    # IN SPLIT MONGO this is just ['metadata'] as it keeps ['_inherited_metadata'] separate!
-    # FIXME move into kvs? will that work for xml mongo?
     """
     Return a dictionary that contains only non-inherited field keys,
     mapped to their values
     """
-    inherited_metadata = getattr(module, '_inherited_metadata', {})
-    metadata = {}
-    for field in module.fields.values():
-        # Only save metadata that wasn't inherited
-        if field.scope != Scope.settings:
-            continue
+    return module.get_explicitly_set_fields_by_scope(Scope.settings)
 
-        if not module._field_data.has(module, field.name):
-            continue
+class InheritanceKeyValueStore(KeyValueStore):
+    """
+    Common superclass for kvs's which know about inheritance of settings. Offers simple
+    dict-based storage of fields and lookup of inherited values.
+    """
+    def __init__(self, initial_values=None, inherited_settings=None):
+        super(InheritanceKeyValueStore, self).__init__()
+        self._inherited_settings = inherited_settings or {}
+        self._fields = initial_values or {}
 
-        if field.name in inherited_metadata and module._field_data.get(module, field.name) == inherited_metadata.get(field.name):
-            continue
+    @property
+    def inherited_settings(self):
+        """
+        Get the settings set by the ancestors (which locally set fields may override or not)
+        """
+        return self._inherited_settings
 
-        try:
-            metadata[field.name] = module._field_data.get(module, field.name)
-        except KeyError:
-            # Ignore any missing keys in _field_data
-            pass
+    @inherited_settings.setter
+    def inherited_settings(self, dictvalue):
+        self._inherited_settings = dictvalue
 
-    return metadata
+    def get(self, key):
+        return self._fields[key.field_name]
+
+    def set(self, key, value):
+        # xml backed courses are read-only, but they do have some computed fields
+        self._fields[key.field_name] = value
+
+    def delete(self, key):
+        del self._fields[key.field_name]
+
+    def has(self, key):
+        return key.field_name in self._fields
+
+    def default(self, key):
+        """
+        Check to see if the default should be from inheritance rather than from the field's global default
+        """
+        return self.inherited_settings[key.field_name]
