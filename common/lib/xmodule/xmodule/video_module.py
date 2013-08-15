@@ -22,15 +22,14 @@ from django.conf import settings
 from xmodule.x_module import XModule
 from xmodule.editing_module import TabsEditingDescriptor
 from xmodule.raw_module import EmptyDataRawDescriptor
-from xmodule.xml_module import is_pointer_tag, name_to_pathname
+from xmodule.xml_module import is_pointer_tag, name_to_pathname, XmlUsage
 from xmodule.modulestore import Location
 from xblock.fields import Scope, String, Boolean, Float, List, Integer, ScopeIds
 
-# TODO: Don't do this - cpennington
-from xblock.test.tools import DictModel
-
 import datetime
 import time
+from xmodule.modulestore.inheritance import InheritanceKeyValueStore
+from xblock.runtime import DbModel
 
 log = logging.getLogger(__name__)
 
@@ -231,9 +230,15 @@ class VideoDescriptor(VideoFields, TabsEditingDescriptor, EmptyDataRawDescriptor
             xml_data = etree.tostring(cls.load_file(filepath, system.resources_fs, location))
         field_data = VideoDescriptor._parse_video_xml(xml_data)
         field_data['location'] = location
+        kvs = InheritanceKeyValueStore(initial_values=field_data)
+        if org is not None and course is not None:
+            course_id = '{}/{}'.format(org, course)
+        else:
+            course_id = ''
+        field_data = DbModel(kvs, cls, None, XmlUsage(course_id, location))
         video = system.construct_block_from_class(
             cls,
-            DictModel(field_data),
+            field_data,
 
             # We're loading a descriptor, so student_id is meaningless
             # We also don't have separate notions of definition and usage ids yet,

@@ -70,6 +70,7 @@ class TestXBlockWrapper(object):
         runtime = ModuleSystem(
             render_template=lambda *args, **kwargs: u'{!r}, {!r}'.format(args, kwargs),
             anonymous_student_id='dummy_anonymous_student_id',
+            get_field_provenance = lambda field: mock_unsupported_fn(),
             open_ended_grading_interface={},
             ajax_url='dummy_ajax_url',
             xblock_field_data=lambda d: d._field_data,
@@ -86,6 +87,7 @@ class TestXBlockWrapper(object):
             resources_fs=Mock(),
             error_tracker=Mock(),
             render_template=(lambda *args, **kwargs: u'{!r}, {!r}'.format(args, kwargs)),
+            get_field_provenance = lambda field: mock_unsupported_fn()
         )
         return runtime
 
@@ -112,6 +114,7 @@ class TestXBlockWrapper(object):
     def container_descriptor_runtime(self):
         runtime = Mock()
         runtime.render_template = lambda *args, **kwargs: u'{!r}, {!r}'.format(args, kwargs)
+        runtime.get_field_provenance = lambda field: mock_unsupported_fn()
         return runtime
 
     def container_descriptor(self, descriptor_cls):
@@ -197,9 +200,9 @@ class TestStudioView(TestXBlockWrapper):
 
     # Test that for all of the Descriptors listed in CONTAINER_XMODULES
     # render the same thing using studio_view as they do using get_html, under the following conditions:
-    # a) All of its descendents are xmodules
-    # b) Some of its descendents are xmodules and some are xblocks
-    # c) All of its descendents are xblocks
+    # a) All of its descendants are xmodules
+    # b) Some of its descendants are xmodules and some are xblocks
+    # c) All of its descendants are xblocks
     def test_studio_view_container_node(self):
         for descriptor_cls in CONTAINER_XMODULES:
             yield self.check_studio_view_container_node_xmodules_only, descriptor_cls
@@ -234,3 +237,6 @@ class TestStudioView(TestXBlockWrapper):
             raise SkipTest(descriptor_cls.__name__ + "is not editable in studio")
 
         raise SkipTest("XBlock support in XModules not yet fully implemented")
+
+def mock_unsupported_fn(*_args):
+    raise AttributeError()
