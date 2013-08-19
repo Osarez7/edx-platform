@@ -688,7 +688,7 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
 
             # gets the 'default_value', 'inheritable', and 'explicitly_set' attrs
             try:
-                metadata_fields[field.name] = self.runtime.get_field_provenance(field)
+                metadata_fields[field.name] = self.runtime.get_field_provenance(self, field)
             except AttributeError:
                 # dhm: i believe only our crufty test systems can get here (in particular get_test_system)
                 metadata_fields[field.name] = {

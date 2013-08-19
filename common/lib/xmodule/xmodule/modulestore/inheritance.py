@@ -72,7 +72,7 @@ def compute_inherited_metadata(descriptor):
         for field in INHERITABLE_METADATA:
             # pylint: disable = W0212
             if descriptor._field_data.has(field):
-                parent_metadata[field] = descriptor._field_data.has(descriptor, field)
+                parent_metadata[field] = descriptor._field_data.get(descriptor, field)
 
         for child in descriptor.get_children():
             inherit_metadata(child, parent_metadata)
@@ -88,23 +88,7 @@ def inherit_metadata(descriptor, inherited_data):
     `inherited_data`: A dictionary mapping field names to the values that
         they should inherit
     """
-    # The inherited values that are actually being used.
-    if not hasattr(descriptor, '_inherited_metadata'):
-        setattr(descriptor, '_inherited_metadata', {})
-
-    # All inheritable metadata values (for which a value exists in field_data).
-    if not hasattr(descriptor, '_inheritable_metadata'):
-        setattr(descriptor, '_inheritable_metadata', {})
-
-    # Set all inheritable metadata from kwargs that are
-    # in self.inheritable_metadata and aren't already set in metadata
-    for attr in INHERITABLE_METADATA:
-        if attr in inherited_data:
-            descriptor._inheritable_metadata[attr] = inherited_data[attr]
-            if not descriptor._field_data.has(descriptor, attr):
-                descriptor._inherited_metadata[attr] = inherited_data[attr]
-                descriptor._field_data.set(descriptor, attr, inherited_data[attr])
-
+    descriptor.xblock_kvs.inherited_settings = inherited_data
 
 def own_metadata(module):
     """

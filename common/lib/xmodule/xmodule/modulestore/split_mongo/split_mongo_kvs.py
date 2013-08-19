@@ -45,6 +45,7 @@ class SplitMongoKVS(InheritanceKeyValueStore):
             # didn't find children in _fields; so, see if there's a default
             raise KeyError()
         elif key.scope == Scope.settings:
+            # get default which may be the inherited value
             raise KeyError()
         elif key.scope == Scope.content:
             if key.field_name == 'location':
@@ -125,34 +126,6 @@ class SplitMongoKVS(InheritanceKeyValueStore):
         # it's not clear whether inherited values should return True. Right now they don't
         # if someone changes it so that they do, then change any tests of field.name in xx._field_data
         return key.field_name in self._fields
-
-    def field_value_provenance(self, key):
-        """
-        Where the field value comes from: one of ['local', 'default', 'inherited'].
-        """
-        # I had the return values in constants but kept getting circular import dependencies. Do we have
-        # a std safe place for such constants?
-        # handle any special cases
-        if key.scope == Scope.content:
-            if key.name == 'location':
-                return 'local'
-            elif key.name == 'category':
-                return 'local'
-            else:
-                self._load_definition()
-                if key.name in self._fields:
-                    return 'local'
-                else:
-                    return 'default'
-        elif key.scope == Scope.parent:
-            return 'default'
-        # catch the locally set state
-        elif key.name in self._fields:
-            return 'local'
-        elif key.scope == Scope.settings and key.name in self.inherited_settings:
-            return 'inherited'
-        else:
-            return 'default'
 
     def _load_definition(self):
         """
