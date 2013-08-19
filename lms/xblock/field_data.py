@@ -43,6 +43,9 @@ class SplitFieldData(FieldData):
     def has(self, block, name):
         return self._field_data(block, name).has(block, name)
 
+    def default(self, block, name):
+        return self._field_data(block, name).default(block, name)
+
 
 class ReadOnlyFieldData(FieldData):
     """
@@ -63,6 +66,9 @@ class ReadOnlyFieldData(FieldData):
 
     def has(self, block, name):
         return self._source.has(block, name)
+
+    def default(self, block, name):
+        return self._source.default(block, name)
 
 
 def lms_field_data(authored_data, student_data):

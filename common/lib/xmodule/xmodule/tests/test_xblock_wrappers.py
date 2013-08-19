@@ -70,7 +70,6 @@ class TestXBlockWrapper(object):
         runtime = ModuleSystem(
             render_template=lambda *args, **kwargs: u'{!r}, {!r}'.format(args, kwargs),
             anonymous_student_id='dummy_anonymous_student_id',
-            get_field_provenance = lambda xblock, field: mock_unsupported_fn(),
             open_ended_grading_interface={},
             ajax_url='dummy_ajax_url',
             xblock_field_data=lambda d: d._field_data,
@@ -87,7 +86,6 @@ class TestXBlockWrapper(object):
             resources_fs=Mock(),
             error_tracker=Mock(),
             render_template=(lambda *args, **kwargs: u'{!r}, {!r}'.format(args, kwargs)),
-            get_field_provenance = lambda xblock, field: mock_unsupported_fn()
         )
         return runtime
 
@@ -106,7 +104,7 @@ class TestXBlockWrapper(object):
         if depth == 0:
             runtime.get_module.side_effect = lambda x: self.leaf_module(HtmlDescriptor)
         else:
-            runtime.get_module.side_effect = lambda x: self.container_module(VerticalDescriptor, depth-1)
+            runtime.get_module.side_effect = lambda x: self.container_module(VerticalDescriptor, depth - 1)
         runtime.position = 2
         return runtime
 

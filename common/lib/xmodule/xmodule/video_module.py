@@ -24,7 +24,7 @@ from django.conf import settings
 from xmodule.x_module import XModule
 from xmodule.editing_module import TabsEditingDescriptor
 from xmodule.raw_module import EmptyDataRawDescriptor
-from xmodule.xml_module import is_pointer_tag, name_to_pathname, XmlUsage
+from xmodule.xml_module import is_pointer_tag, name_to_pathname
 from xmodule.modulestore import Location
 from xblock.fields import Scope, String, Boolean, Float, List, Integer, ScopeIds
 
@@ -231,11 +231,7 @@ class VideoDescriptor(VideoFields, TabsEditingDescriptor, EmptyDataRawDescriptor
         field_data = VideoDescriptor._parse_video_xml(xml_data)
         field_data['location'] = location
         kvs = InheritanceKeyValueStore(initial_values=field_data)
-        if org is not None and course is not None:
-            course_id = '{}/{}'.format(org, course)
-        else:
-            course_id = ''
-        field_data = DbModel(kvs, cls, None, XmlUsage(course_id, location))
+        field_data = DbModel(kvs)
         video = system.construct_block_from_class(
             cls,
             field_data,
@@ -266,14 +262,11 @@ class VideoDescriptor(VideoFields, TabsEditingDescriptor, EmptyDataRawDescriptor
             'sub': self.sub,
             'url_name': self.url_name
         }
-        fields = self.fields.keys()
         for key, value in attrs.items():
             # Mild workaround to ensure that tests pass -- if a field
             # is set to its default value, we don't need to write it out.
-            if key in fields and fields[key].default == getattr(self, key):
-                continue
-            if value:
-                xml.set(key, unicode(value))
+            if value and key not in self.fields:
+                xml.set(key, unicode(value))  # if the field is explicitly set, save it
 
         for source in self.html5_sources:
             ele = etree.Element('source')

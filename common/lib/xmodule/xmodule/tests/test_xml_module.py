@@ -5,7 +5,7 @@ from xmodule.x_module import XModuleFields, XModuleDescriptor
 from xblock.fields import Scope, String, Dict, Boolean, Integer, Float, Any, List
 from xblock.test.tools import DictModel
 from xmodule.fields import Date, Timedelta
-from xmodule.xml_module import XmlDescriptor, serialize_field, deserialize_field, XmlUsage
+from xmodule.xml_module import XmlDescriptor, serialize_field, deserialize_field
 import unittest
 from .import get_test_system
 from nose.tools import assert_equals  # pylint: disable=E0611
@@ -88,7 +88,7 @@ class EditableMetadataFieldsTest(unittest.TestCase):
     def test_inherited_field(self):
         kvs = InheritanceKeyValueStore(initial_values={})
         # randomly using XModuleDescriptor b/c the Test descriptor is hidden
-        model_data = DbModel(kvs, XModuleDescriptor, None, XmlUsage('location.course_id', Mock()))
+        model_data = DbModel(kvs)
 
         inherited = {'display_name': 'inherited'}
         descriptor = self.get_descriptor(model_data)

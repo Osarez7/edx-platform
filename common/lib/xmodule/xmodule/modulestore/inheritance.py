@@ -16,7 +16,7 @@ INHERITABLE_METADATA = (
     # elements.  Can be a float.
     'days_early_for_beta',
     'giturl',  # for git edit link
-    'static_asset_path',       # for static assets placed outside xcontent contentstore
+    'static_asset_path',  # for static assets placed outside xcontent contentstore
 )
 
 
@@ -71,7 +71,7 @@ def compute_inherited_metadata(descriptor):
         # add any of descriptor's explicitly set fields to the inheriting list
         for field in INHERITABLE_METADATA:
             # pylint: disable = W0212
-            if descriptor._field_data.has(field):
+            if descriptor._field_data.has(descriptor, field):
                 parent_metadata[field] = descriptor._field_data.get(descriptor, field)
 
         for child in descriptor.get_children():
@@ -88,7 +88,10 @@ def inherit_metadata(descriptor, inherited_data):
     `inherited_data`: A dictionary mapping field names to the values that
         they should inherit
     """
-    descriptor.xblock_kvs.inherited_settings = inherited_data
+    try:
+        descriptor.xblock_kvs.inherited_settings = inherited_data
+    except AttributeError:  # the kvs doesn't have inherited_settings probably b/c it's an error module
+        pass
 
 def own_metadata(module):
     """
@@ -104,19 +107,8 @@ class InheritanceKeyValueStore(KeyValueStore):
     """
     def __init__(self, initial_values=None, inherited_settings=None):
         super(InheritanceKeyValueStore, self).__init__()
-        self._inherited_settings = inherited_settings or {}
+        self.inherited_settings = inherited_settings or {}
         self._fields = initial_values or {}
-
-    @property
-    def inherited_settings(self):
-        """
-        Get the settings set by the ancestors (which locally set fields may override or not)
-        """
-        return self._inherited_settings
-
-    @inherited_settings.setter
-    def inherited_settings(self, dictvalue):
-        self._inherited_settings = dictvalue
 
     def get(self, key):
         return self._fields[key.field_name]
