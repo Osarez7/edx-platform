@@ -15,6 +15,8 @@ import logging
 
 from lxml import etree
 from pkg_resources import resource_string
+import datetime
+import time
 
 from django.http import Http404
 from django.conf import settings
@@ -26,8 +28,6 @@ from xmodule.xml_module import is_pointer_tag, name_to_pathname, XmlUsage
 from xmodule.modulestore import Location
 from xblock.fields import Scope, String, Boolean, Float, List, Integer, ScopeIds
 
-import datetime
-import time
 from xmodule.modulestore.inheritance import InheritanceKeyValueStore
 from xblock.runtime import DbModel
 
@@ -266,7 +266,7 @@ class VideoDescriptor(VideoFields, TabsEditingDescriptor, EmptyDataRawDescriptor
             'sub': self.sub,
             'url_name': self.url_name
         }
-        fields = {field.name: field for field in self.fields.values()}
+        fields = self.fields.keys()
         for key, value in attrs.items():
             # Mild workaround to ensure that tests pass -- if a field
             # is set to its default value, we don't need to write it out.
