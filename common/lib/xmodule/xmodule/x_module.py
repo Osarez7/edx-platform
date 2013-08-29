@@ -692,7 +692,7 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
             except AttributeError:
                 # dhm: i believe only our crufty test systems can get here (in particular get_test_system)
                 metadata_fields[field.name] = {
-                    'default_value': field.default,
+                    'default_value': field.to_json(field.default),
                     'inheritable': False,
                     'explicitly_set': self._field_data.has(self, field.name)
                 }
@@ -801,7 +801,8 @@ class DescriptorSystem(Runtime):
         """
         For the given xblock, return a dict for the field's current state:
         {
-            'default_value': what value will take effect if field is unset: either the field default or,
+            'default_value': what json'd value will take effect if field is unset: either the field default or
+            inherited value,
             'inheritable': whether the default comes via inheritance rather than field default (boolean),
             'explicitly_set': boolean for whether the current value is set v default/inherited,
         }
@@ -812,7 +813,6 @@ class DescriptorSystem(Runtime):
         # which needs this level of introspection right now. runtime also is 'allowed' to know
         # about the kvs, dbmodel, etc.
 
-        # This method 'knows' about our 2 different kvs's and how they store data.
         result = {}
         result['explicitly_set'] = xblock._field_data.has(xblock, field.name)
         try:
@@ -820,10 +820,10 @@ class DescriptorSystem(Runtime):
         except AttributeError:  # if inherited_settings doesn't exist on kvs
             block_inherited = {}
         if field.name in block_inherited:
-            result['default_value'] = block_inherited[field.name]
+            result['default_value'] = field.to_json(block_inherited[field.name])
             result['inheritable'] = True
         else:
-            result['default_value'] = field.default
+            result['default_value'] = field.to_json(field.default)
             result['inheritable'] = False
         return result
 

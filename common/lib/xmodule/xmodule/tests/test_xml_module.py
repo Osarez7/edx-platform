@@ -12,6 +12,7 @@ from nose.tools import assert_equals  # pylint: disable=E0611
 from mock import Mock
 from xmodule.modulestore.inheritance import InheritanceKeyValueStore
 from xblock.runtime import DbModel
+from xmodule.tests import get_test_descriptor_system
 
 
 class CrazyJsonString(String):
@@ -50,7 +51,7 @@ class EditableMetadataFieldsTest(unittest.TestCase):
         editable_fields = self.get_xml_editable_fields(DictModel({}))
         # Tests that the xblock fields (currently tags and name) get filtered out.
         # Also tests that xml_attributes is filtered out of XmlDescriptor.
-        self.assertEqual(1, len(editable_fields), "Expected only 1 editable field for xml descriptor.")
+        self.assertEqual(1, len(editable_fields), editable_fields)
         self.assert_field_values(
             editable_fields, 'display_name', XModuleFields.display_name,
             explicitly_set=False, inheritable=False, value=None, default_value=None
@@ -85,24 +86,25 @@ class EditableMetadataFieldsTest(unittest.TestCase):
             options=TestFields.max_attempts.values
         )
 
+    # NOTE: this test is misleading b/c display_name is not inheritable (inheritance.INHERITABLE_METADATA)
     def test_inherited_field(self):
-        kvs = InheritanceKeyValueStore(initial_values={})
+        kvs = InheritanceKeyValueStore(initial_values={}, inherited_settings={'display_name': 'inherited'})
         # randomly using XModuleDescriptor b/c the Test descriptor is hidden
         model_data = DbModel(kvs)
-
-        inherited = {'display_name': 'inherited'}
         descriptor = self.get_descriptor(model_data)
-        # Mimic an inherited value for display_name (inherited and inheritable are the same in this case).
-        descriptor.xblock_kvs.inherited_settings = inherited
         editable_fields = descriptor.editable_metadata_fields
         self.assert_field_values(
             editable_fields, 'display_name', TestFields.display_name,
             explicitly_set=False, inheritable=True, value='inherited', default_value='inherited'
         )
 
-        descriptor = self.get_descriptor(DictModel({'display_name': 'explicit'}))
         # Mimic the case where display_name WOULD have been inherited, except we explicitly set it.
-        descriptor.xblock_kvs.inherited_settings = {'display_name': 'inheritable value'}
+        kvs = InheritanceKeyValueStore(
+            initial_values={'display_name': 'explicit'},
+            inherited_settings={'display_name': 'inheritable value'}
+        )
+        model_data = DbModel(kvs)
+        descriptor = self.get_descriptor(model_data)
         editable_fields = descriptor.editable_metadata_fields
         self.assert_field_values(
             editable_fields, 'display_name', TestFields.display_name,
@@ -163,7 +165,7 @@ class EditableMetadataFieldsTest(unittest.TestCase):
                 non_editable_fields.append(TestModuleDescriptor.due)
                 return non_editable_fields
 
-        system = get_test_system()
+        system = get_test_descriptor_system()
         system.render_template = Mock(return_value="<div>Test Template HTML</div>")
         return TestModuleDescriptor(runtime=system, field_data=field_data, scope_ids=Mock())
 

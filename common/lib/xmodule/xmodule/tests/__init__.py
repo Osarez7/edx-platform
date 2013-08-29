@@ -19,7 +19,7 @@ from path import path
 
 import calc
 from xblock.test.tools import DictModel
-from xmodule.x_module import ModuleSystem, XModuleDescriptor
+from xmodule.x_module import ModuleSystem, XModuleDescriptor, DescriptorSystem
 
 
 # Location of common test DATA directory
@@ -64,7 +64,28 @@ def get_test_system():
         node_path=os.environ.get("NODE_PATH", "/usr/local/lib/node_modules"),
         xblock_field_data=lambda descriptor: descriptor._field_data,
         anonymous_student_id='student',
-        open_ended_grading_interface= open_ended_grading_interface
+        open_ended_grading_interface=open_ended_grading_interface
+    )
+
+
+def get_test_descriptor_system():
+    """
+    Construct a test DescriptorSystem instance.
+
+    By default, the render_template() method simply returns the repr of the
+    context it is passed.  You can override this behavior by monkey patching::
+
+        system = get_test_system()
+        system.render_template = my_render_func
+
+    where `my_render_func` is a function of the form my_render_func(template, context).
+
+    """
+    return DescriptorSystem(
+        load_item=Mock(),
+        resources_fs=Mock(),
+        error_tracker=Mock(),
+        render_template=lambda template, context: repr(context)
     )
 
 
