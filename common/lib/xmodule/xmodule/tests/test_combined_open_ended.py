@@ -26,6 +26,7 @@ from xmodule.progress import Progress
 from xmodule.tests.test_util_open_ended import (MockQueryDict, DummyModulestore, TEST_STATE_SA_IN,
     MOCK_INSTANCE_STATE, TEST_STATE_SA, TEST_STATE_AI, TEST_STATE_AI2, TEST_STATE_AI2_INVALID,
     TEST_STATE_SINGLE, TEST_STATE_PE_SINGLE)
+from xblock.test.tools import DictModel
 import capa.xqueue_interface as xqueue_interface
 
 
@@ -416,13 +417,14 @@ class CombinedOpenEndedModuleTest(unittest.TestCase):
     test_system = get_test_system()
     test_system.open_ended_grading_interface = None
     combinedoe_container = CombinedOpenEndedModule(
-        test_system,
-        descriptor,
-        model_data={
+        descriptor=descriptor,
+        runtime=test_system,
+        field_data=DictModel({
             'data': full_definition,
             'weight': '1',
             'location': location
-        }
+        }),
+        scope_ids=Mock(),
     )
 
     def setUp(self):

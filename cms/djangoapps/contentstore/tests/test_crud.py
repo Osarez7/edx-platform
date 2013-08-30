@@ -226,12 +226,8 @@ class TemplateTests(unittest.TestCase):
 
         new_block = system.xblock_from_json(class_, usage_id, json_data)
         if parent_xblock is not None:
-            children = parent_xblock.children
-            children.append(new_block)
-            # trigger setter method by using top level field access
-            parent_xblock.children = children
-            # decache pending children field settings (Note, truly persisting at this point would break b/c
-            # persistence assumes children is a list of ids not actual xblocks)
+            parent_xblock.children.append(new_block.scope_ids.usage_id)
+            # decache pending children field settings
             parent_xblock.save()
         return new_block
 

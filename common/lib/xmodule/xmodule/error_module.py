@@ -12,7 +12,10 @@ from lxml import etree
 from xmodule.x_module import XModule, XModuleDescriptor
 from xmodule.errortracker import exc_info_to_str
 from xmodule.modulestore import Location
-from xblock.core import String, Scope
+from xblock.fields import String, Scope, ScopeIds
+
+# TODO: Don't do this - cpennington
+from xblock.test.tools import DictModel
 
 
 log = logging.getLogger(__name__)
@@ -95,16 +98,19 @@ class ErrorDescriptor(ErrorFields, XModuleDescriptor):
             )
 
         # real metadata stays in the content, but add a display name
-        model_data = {
+        field_data = DictModel({
             'error_msg': str(error_msg),
             'contents': contents,
             'display_name': 'Error: ' + location.url(),
             'location': location,
             'category': 'error'
-        }
-        return cls(
-            system,
-            model_data,
+        })
+        return system.construct_block_from_class(
+            cls,
+            field_data,
+            # The error module doesn't use scoped data, and thus doesn't need
+            # real scope keys
+            ScopeIds('error', None, None, None)
         )
 
     def get_context(self):

@@ -1,7 +1,8 @@
 import copy
-from xblock.core import Scope
+from xblock.fields import Scope
 from collections import namedtuple
-from xblock.runtime import KeyValueStore, InvalidScopeError
+from xblock.runtime import KeyValueStore
+from xblock.exceptions import InvalidScopeError
 from .definition_lazy_loader import DefinitionLazyLoader
 
 # id is a BlockUsageLocator, def_id is the definition's guid
@@ -133,7 +134,7 @@ class SplitMongoKVS(KeyValueStore):
             return True
 
         # it's not clear whether inherited values should return True. Right now they don't
-        # if someone changes it so that they do, then change any tests of field.name in xx._model_data
+        # if someone changes it so that they do, then change any tests of field.name in xx._field_data
         return key.field_name in self._fields
 
     # would like to just take a key, but there's a bunch of magic in DbModel for constructing the key via

@@ -6,11 +6,14 @@ import sys
 from collections import namedtuple
 from lxml import etree
 
-from xblock.core import Dict, Scope
+from xblock.fields import Dict, Scope, ScopeIds
 from xmodule.x_module import (XModuleDescriptor, policy_key)
 from xmodule.modulestore import Location
 from xmodule.modulestore.inheritance import own_metadata
 from xmodule.modulestore.xml_exporter import EdxJSONEncoder
+
+# TODO: Don't do this - cpennington
+from xblock.test.tools import DictModel
 
 log = logging.getLogger(__name__)
 
@@ -172,7 +175,7 @@ class XmlDescriptor(XModuleDescriptor):
 
         Searches through fields defined by cls to find one named attr.
         """
-        for field in set(cls.fields + cls.lms.fields):
+        for field in cls.fields.values():
             if field.name == attr:
                 from_xml = lambda val: deserialize_field(field, val)
                 to_xml = lambda val: serialize_field(val)
@@ -352,22 +355,27 @@ class XmlDescriptor(XModuleDescriptor):
         if k in system.policy:
             cls.apply_policy(metadata, system.policy[k])
 
-        model_data = {}
-        model_data.update(metadata)
-        model_data.update(definition)
-        model_data['children'] = children
+        field_data = {}
+        field_data.update(metadata)
+        field_data.update(definition)
+        field_data['children'] = children
 
-        model_data['xml_attributes'] = {}
-        model_data['xml_attributes']['filename'] = definition.get('filename', ['', None])  # for git link
+        field_data['xml_attributes'] = {}
+        field_data['xml_attributes']['filename'] = definition.get('filename', ['', None])  # for git link
         for key, value in metadata.items():
-            if key not in set(f.name for f in cls.fields + cls.lms.fields):
-                model_data['xml_attributes'][key] = value
-        model_data['location'] = location
-        model_data['category'] = xml_object.tag
+            if key not in cls.fields:
+                field_data['xml_attributes'][key] = value
+        field_data['location'] = location
+        field_data['category'] = xml_object.tag
 
-        return cls(
-            system,
-            model_data,
+        return system.construct_block_from_class(
+            cls,
+            DictModel(field_data),
+
+            # We're loading a descriptor, so student_id is meaningless
+            # We also don't have separate notions of definition and usage ids yet,
+            # so we use the location for both
+            ScopeIds(None, location.category, location, location)
         )
 
     @classmethod
@@ -413,7 +421,7 @@ class XmlDescriptor(XModuleDescriptor):
             (Possible format conversion through an AttrMap).
              """
             attr_map = self.get_map_for_field(attr)
-            return attr_map.to_xml(self._model_data[attr])
+            return attr_map.to_xml(self._field_data.get(self, attr))
 
         # Add the non-inherited metadata
         for attr in sorted(own_metadata(self)):

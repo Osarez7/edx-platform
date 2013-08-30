@@ -11,6 +11,7 @@ import re
 import requests
 from requests.status_codes import codes
 from collections import OrderedDict
+from mock import Mock
 
 from StringIO import StringIO
 
@@ -52,6 +53,7 @@ from psychometrics import psychoanalyze
 from student.models import CourseEnrollment, CourseEnrollmentAllowed
 import track.views
 from mitxmako.shortcuts import render_to_string
+from xblock.test.tools import DictModel
 
 
 from bulk_email.models import CourseEmail
@@ -109,17 +111,11 @@ def instructor_dashboard(request, course_id):
         data += [['Date', timezone.now().isoformat()]]
         data += compute_course_stats(course).items()
         if request.user.is_staff:
-            for field in course.fields:
+            for field in course.fields.values():
                 if getattr(field.scope, 'user', False):
                     continue
 
                 data.append([field.name, json.dumps(field.read_json(course))])
-            for namespace in course.namespaces:
-                for field in getattr(course, namespace).fields:
-                    if getattr(field.scope, 'user', False):
-                        continue
-
-                    data.append(["{}.{}".format(namespace, field.name), json.dumps(field.read_json(course))])
         datatable['data'] = data
         return datatable
 
@@ -794,7 +790,7 @@ def instructor_dashboard(request, course_id):
 
     # HTML editor for email
     if idash_mode == 'Email':
-        html_module = HtmlDescriptor(course.system, {'data': html_message})
+        html_module = HtmlDescriptor(course.system, DictModel({'data': html_message}), Mock())
         email_editor = wrap_xmodule(html_module.get_html, html_module, 'xmodule_edit.html')()
     else:
         email_editor = None
@@ -1472,7 +1468,7 @@ def dump_grading_context(course):
         msg += "--> Section %s:\n" % (gs)
         for sec in gsvals:
             s = sec['section_descriptor']
-            grade_format = getattr(s.lms, 'grade_format', None)
+            grade_format = getattr(s, 'grade_format', None)
             aname = ''
             if grade_format in graders:
                 g = graders[grade_format]

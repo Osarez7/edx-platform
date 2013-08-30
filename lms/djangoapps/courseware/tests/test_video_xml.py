@@ -17,12 +17,14 @@ course, section, subsection, unit, etc.
 
 import json
 import unittest
+from mock import Mock
 
 from django.conf import settings
 
 from xmodule.video_module import VideoDescriptor, _create_youtube_string
 from xmodule.modulestore import Location
 from xmodule.tests import get_test_system, LogicTest
+from xblock.test.tools import DictModel
 
 
 SOURCE_XML = """
@@ -52,13 +54,13 @@ class VideoFactory(object):
         """Method return Video Xmodule instance."""
         location = Location(["i4x", "edX", "video", "default",
                              "SampleProblem1"])
-        model_data = {'data': VideoFactory.sample_problem_xml_youtube,
+        field_data = {'data': VideoFactory.sample_problem_xml_youtube,
                       'location': location}
 
         system = get_test_system()
         system.render_template = lambda template, context: context
 
-        descriptor = VideoDescriptor(system, model_data)
+        descriptor = VideoDescriptor(system, DictModel(field_data), Mock())
 
         module = descriptor.xmodule(system)
 
@@ -110,7 +112,7 @@ class VideoModuleLogicTest(LogicTest):
 
     descriptor_class = VideoDescriptor
 
-    raw_model_data = {
+    raw_field_data = {
         'data': '<video />'
     }
 

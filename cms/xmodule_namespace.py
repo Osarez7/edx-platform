@@ -4,12 +4,12 @@ Namespace defining common fields used by Studio for all blocks
 
 import datetime
 
-from xblock.core import Namespace, Scope, ModelType, String
+from xblock.fields import Scope, Field, String, ModelMetaclass
 
 
-class DateTuple(ModelType):
+class DateTuple(Field):
     """
-    ModelType that stores datetime objects as time tuples
+    Field that stores datetime objects as time tuples
     """
     def from_json(self, value):
         return datetime.datetime(*value[0:6])
@@ -21,9 +21,11 @@ class DateTuple(ModelType):
         return list(value.timetuple())
 
 
-class CmsNamespace(Namespace):
+class CmsBlockMixin(object):
     """
-    Namespace with fields common to all blocks in Studio
+    Mixin with fields common to all blocks in Studio
     """
+    __metaclass__ = ModelMetaclass
+
     published_date = DateTuple(help="Date when the module was published", scope=Scope.settings)
     published_by = String(help="Id of the user who published this module", scope=Scope.settings)

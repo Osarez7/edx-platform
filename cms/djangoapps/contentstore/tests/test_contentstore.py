@@ -219,7 +219,7 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
                                                'course', '2012_Fall', None]), depth=None)
         html_module = draft_store.get_item(['i4x', 'edX', 'simple', 'html', 'test_html', None])
 
-        self.assertEqual(html_module.lms.graceperiod, course.lms.graceperiod)
+        self.assertEqual(html_module.graceperiod, course.graceperiod)
         self.assertNotIn('graceperiod', own_metadata(html_module))
 
         draft_store.convert_to_draft(html_module.location)
@@ -227,7 +227,7 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
         # refetch to check metadata
         html_module = draft_store.get_item(['i4x', 'edX', 'simple', 'html', 'test_html', None])
 
-        self.assertEqual(html_module.lms.graceperiod, course.lms.graceperiod)
+        self.assertEqual(html_module.graceperiod, course.graceperiod)
         self.assertNotIn('graceperiod', own_metadata(html_module))
 
         # publish module
@@ -236,7 +236,7 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
         # refetch to check metadata
         html_module = draft_store.get_item(['i4x', 'edX', 'simple', 'html', 'test_html', None])
 
-        self.assertEqual(html_module.lms.graceperiod, course.lms.graceperiod)
+        self.assertEqual(html_module.graceperiod, course.graceperiod)
         self.assertNotIn('graceperiod', own_metadata(html_module))
 
         # put back in draft and change metadata and see if it's now marked as 'own_metadata'
@@ -246,12 +246,12 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
         new_graceperiod = timedelta(hours=1)
 
         self.assertNotIn('graceperiod', own_metadata(html_module))
-        html_module.lms.graceperiod = new_graceperiod
+        html_module.graceperiod = new_graceperiod
         # Save the data that we've just changed to the underlying
         # MongoKeyValueStore before we update the mongo datastore.
         html_module.save()
         self.assertIn('graceperiod', own_metadata(html_module))
-        self.assertEqual(html_module.lms.graceperiod, new_graceperiod)
+        self.assertEqual(html_module.graceperiod, new_graceperiod)
 
         draft_store.update_metadata(html_module.location, own_metadata(html_module))
 
@@ -259,7 +259,7 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
         html_module = draft_store.get_item(['i4x', 'edX', 'simple', 'html', 'test_html', None])
 
         self.assertIn('graceperiod', own_metadata(html_module))
-        self.assertEqual(html_module.lms.graceperiod, new_graceperiod)
+        self.assertEqual(html_module.graceperiod, new_graceperiod)
 
         # republish
         draft_store.publish(html_module.location, 0)
@@ -269,7 +269,7 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
         html_module = draft_store.get_item(['i4x', 'edX', 'simple', 'html', 'test_html', None])
 
         self.assertIn('graceperiod', own_metadata(html_module))
-        self.assertEqual(html_module.lms.graceperiod, new_graceperiod)
+        self.assertEqual(html_module.graceperiod, new_graceperiod)
 
     def test_get_depth_with_drafts(self):
         import_from_xml(modulestore('direct'), 'common/test/data/', ['simple'])
@@ -965,7 +965,7 @@ class ContentStoreToyCourseTest(ModuleStoreTestCase):
         self.assertTrue(getattr(vertical, 'is_draft', False))
         self.assertNotIn('index_in_children_list', child.xml_attributes)
         self.assertNotIn('parent_sequential_url', vertical.xml_attributes)
-                
+
         for child in vertical.get_children():
             self.assertTrue(getattr(child, 'is_draft', False))
             self.assertNotIn('index_in_children_list', child.xml_attributes)
@@ -1628,8 +1628,8 @@ class ContentStoreTest(ModuleStoreTestCase):
 
         # let's assert on the metadata_inheritance on an existing vertical
         for vertical in verticals:
-            self.assertEqual(course.lms.xqa_key, vertical.lms.xqa_key)
-            self.assertEqual(course.start, vertical.lms.start)
+            self.assertEqual(course.xqa_key, vertical.xqa_key)
+            self.assertEqual(course.start, vertical.start)
 
         self.assertGreater(len(verticals), 0)
 
@@ -1645,16 +1645,16 @@ class ContentStoreTest(ModuleStoreTestCase):
         new_module = module_store.get_item(new_component_location)
 
         # check for grace period definition which should be defined at the course level
-        self.assertEqual(parent.lms.graceperiod, new_module.lms.graceperiod)
-        self.assertEqual(parent.lms.start, new_module.lms.start)
-        self.assertEqual(course.start, new_module.lms.start)
+        self.assertEqual(parent.graceperiod, new_module.graceperiod)
+        self.assertEqual(parent.start, new_module.start)
+        self.assertEqual(course.start, new_module.start)
 
-        self.assertEqual(course.lms.xqa_key, new_module.lms.xqa_key)
+        self.assertEqual(course.xqa_key, new_module.xqa_key)
 
         #
         # now let's define an override at the leaf node level
         #
-        new_module.lms.graceperiod = timedelta(1)
+        new_module.graceperiod = timedelta(1)
         new_module.save()
         module_store.update_metadata(new_module.location, own_metadata(new_module))
 
@@ -1662,7 +1662,7 @@ class ContentStoreTest(ModuleStoreTestCase):
         module_store.refresh_cached_metadata_inheritance_tree(new_component_location)
         new_module = module_store.get_item(new_component_location)
 
-        self.assertEqual(timedelta(1), new_module.lms.graceperiod)
+        self.assertEqual(timedelta(1), new_module.graceperiod)
 
     def test_default_metadata_inheritance(self):
         course = CourseFactory.create()
@@ -1670,7 +1670,7 @@ class ContentStoreTest(ModuleStoreTestCase):
         course.children.append(vertical)
         # in memory
         self.assertIsNotNone(course.start)
-        self.assertEqual(course.start, vertical.lms.start)
+        self.assertEqual(course.start, vertical.start)
         self.assertEqual(course.textbooks, [])
         self.assertIn('GRADER', course.grading_policy)
         self.assertIn('GRADE_CUTOFFS', course.grading_policy)
@@ -1682,7 +1682,7 @@ class ContentStoreTest(ModuleStoreTestCase):
         fetched_item = module_store.get_item(vertical.location)
         self.assertIsNotNone(fetched_course.start)
         self.assertEqual(course.start, fetched_course.start)
-        self.assertEqual(fetched_course.start, fetched_item.lms.start)
+        self.assertEqual(fetched_course.start, fetched_item.start)
         self.assertEqual(course.textbooks, fetched_course.textbooks)
         # is this test too strict? i.e., it requires the dicts to be ==
         self.assertEqual(course.checklists, fetched_course.checklists)
@@ -1755,12 +1755,10 @@ class MetadataSaveTestCase(ModuleStoreTestCase):
             'track'
         }
 
-        fields = self.video_descriptor.fields
         location = self.video_descriptor.location
 
-        for field in fields:
-            if field.name in attrs_to_strip:
-                field.delete_from(self.video_descriptor)
+        for field_name in attrs_to_strip:
+            delattr(self.video_descriptor, field_name)
 
         self.assertNotIn('html5_sources', own_metadata(self.video_descriptor))
         get_modulestore(location).update_metadata(

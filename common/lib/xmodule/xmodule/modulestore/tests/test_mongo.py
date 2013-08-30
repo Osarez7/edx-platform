@@ -6,8 +6,9 @@ from nose.tools import assert_equals, assert_raises, \
 import pymongo
 from uuid import uuid4
 
-from xblock.core import Scope
-from xblock.runtime import KeyValueStore, InvalidScopeError
+from xblock.fields import Scope
+from xblock.runtime import KeyValueStore
+from xblock.exceptions import InvalidScopeError
 
 from xmodule.tests import DATA_DIR
 from xmodule.modulestore import Location
