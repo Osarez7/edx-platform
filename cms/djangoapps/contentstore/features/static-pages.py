@@ -23,16 +23,16 @@ def add_page(_step):
 def see_page(_step, doesnt, page):
     index = get_index(page)
     if doesnt:
-        assert index == -1
+        assert index is None
     else:
-        assert index != -1
+        assert index is not None
 
 
 @step(u'I "([^"]*)" the "([^"]*)" page$')
 def click_edit_delete(_step, edit_delete, page):
     button_css = 'a.%s-button' % edit_delete
     index = get_index(page)
-    assert index != -1
+    assert index is not None
     world.css_click(button_css, index=index)
 
 
@@ -52,6 +52,6 @@ def get_index(name):
     page_name_css = 'section[data-type="HTMLModule"]'
     all_pages = world.css_find(page_name_css)
     for i in range(len(all_pages)):
-        if world.css_html(page_name_css, index=i) == '\n    {name}\n'.format(name=name):
+        if name in world.css_html(page_name_css, index=i):
             return i
-    return -1
+    return None
